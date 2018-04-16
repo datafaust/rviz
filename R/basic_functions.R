@@ -140,3 +140,92 @@ etl_frames = function(vid,height,width,chnl,output) {
   Rvision::release(vid_obj)
   
 }
+
+
+
+
+
+#' extract frames and produce an image bank from a video file in parallel
+#'
+#' This function extracts frames from video and places them in your workspace with specific parameters.
+#' @param vid the link to the video.
+#' @param height the directory it will go to.
+#' @param width a key work for the video to be named.
+#' @param chnl a key work for the video to be named.
+#' @param output a key work for the video to be named.
+#' @keywords par
+#' @export
+#' @examples
+#'
+
+par_etl_frames = function(vid,height,width,chnl,output,cores) {
+  
+  img_dirs =
+    list(
+      pos = paste0(getwd(),"/","pos")
+      ,negs = paste0(getwd(),"/","negs")
+      ,imagebank = paste0(getwd(),"/","imagebank")
+      ,explore = paste0(getwd(),"/","explore")
+    )
+  
+  #libraries
+  libs = c('data.table', 'lubridate', 'fasttime'
+           , 'pbapply', 'dplyr', 'parallel','fst'
+           ,'RCurl')
+  lapply(libs, require, character.only = T)
+  
+  
+  vid = if(missing(vid)){vid = paste0(
+    getwd(),"/","raw_vid_src",vid_typ
+  )} else {vid}
+  
+  print(vid)
+  
+  vid_obj=Rvision::video(vid)
+  
+  output = if(missing(output)){".jpg"} else {output}
+  
+  h =
+    if(missing(height)) {100} else {h}
+  w =
+    if(missing(width)) {100} else {w}
+  chnl=
+    if(missing(chnl)) {
+      "BGR"
+    } else {
+      chnl
+    }
+  
+  
+  cl = makeCluster(cores)
+  clusterExport(cl,c("libs","img_dirs","vid","output","h","w","chnl"))
+  clusterEvalQ(cl,lapply(libs,require,character.only = T))
+  
+  
+  pblapply(1:nframes(vid_obj),function(x){
+    
+    
+    cat = Rvision::readFrame(vid_obj,x)
+    
+    cat = Rvision::changeColorSpace(cat,chnl)
+    
+    #resize the image 100 x 100
+    cat = Rvision::resize(cat, width = w, height=h)
+    setwd(img_dirs$imagebank)
+    
+    print(paste0(getwd(),"/",x,output))
+    Rvision::write.Image(cat
+                         ,paste0(getwd(),"/",x,output))
+    
+    #
+    setwd(homez)
+    
+  },cl=cl)
+  stopCluster(cl)
+  rm(cl)
+  gc()
+  
+  
+  Rvision::release(vid_obj)
+  
+}
