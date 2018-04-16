@@ -22,6 +22,24 @@ create_proj = function(){
 }
 
 
+#' produce image directory 
+#'
+#' This function calls the image directories.
+#' @keywords create
+#' @export
+#' @examples
+#' create_proj()
+create_direct=function(){
+  img_dirs <<-
+    list(
+      pos = paste0(getwd(),"/","pos")
+      ,negs = paste0(getwd(),"/","negs")
+      ,imagebank = paste0(getwd(),"/","imagebank")
+      ,explore = paste0(getwd(),"/","explore")
+    )
+}
+
+
 #' download video from link
 #'
 #' This function pulls a video from the web to work with; you must run create_proj first if you omit sbj.
